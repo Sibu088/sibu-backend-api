@@ -1,21 +1,17 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const generateToken = require("../utils/SecretToken");
 
 // SIGNUP FUNCTION
 exports.signup = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ error: "User already exists" });
 
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create new user
     const newUser = new User({
       username,
       email,
@@ -24,16 +20,14 @@ exports.signup = async (req, res) => {
 
     await newUser.save();
 
-    // Generate token
-    const token = generateToken(newUser._id);
-
-    res.status(201).json({ token, user: newUser });
+    // Just return success message and user data
+    res.status(201).json({ message: "Signup successful", user: newUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Already existing login function
+// LOGIN FUNCTION (No Token)
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -44,9 +38,8 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = generateToken(user._id);
-
-    res.json({ token, user });
+    // Return basic user data only (no token)
+    res.json({ message: "Login successful", user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
